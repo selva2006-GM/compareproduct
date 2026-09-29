@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WashCompare — Washing Machine Visualizer</title>
+<style>
+:root{
+  --bg:#f5f7fb;--card:#fff;--text:#172033;--muted:#667085;
+  --line:#e5e7eb;--primary:#315efb;--primary2:#6d5dfc;
+  --green:#0f9d68;--orange:#f59e0b;--red:#ef4444;
+  --shadow:0 10px 30px rgba(16,24,40,.07);
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif;background:var(--bg);color:var(--text)}
+button,input,select{font:inherit}
+.hero{background:linear-gradient(135deg,#101828,#253b9e 55%,#5b4bd8);color:#fff;padding:42px 20px 80px}
+.wrap{max-width:1250px;margin:auto}
+.hero h1{font-size:clamp(32px,5vw,56px);margin:0 0 10px;letter-spacing:-1.8px}
+.hero p{margin:0;color:#dbe4ff;font-size:17px;max-width:720px}
+.controls{margin:-42px auto 30px;position:relative;z-index:2;background:var(--card);padding:18px;border-radius:18px;box-shadow:var(--shadow);display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr auto;gap:12px}
+input,select{width:100%;border:1px solid var(--line);background:#fff;border-radius:10px;padding:11px 12px;color:var(--text);outline:none}
+input:focus,select:focus{border-color:var(--primary)}
+.btn{border:0;border-radius:10px;padding:11px 16px;background:#111827;color:#fff;cursor:pointer}
+.btn.secondary{background:#eef2ff;color:#2946c7}
+.section-title{display:flex;align-items:end;justify-content:space-between;gap:15px;margin:28px 0 15px}
+.section-title h2{margin:0;font-size:25px}
+.section-title span{color:var(--muted);font-size:14px}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:20px;box-shadow:0 3px 15px rgba(16,24,40,.035);transition:.2s}
+.card:hover{transform:translateY(-3px);box-shadow:var(--shadow)}
+.select-machine{display:flex;align-items:center;gap:8px;margin-bottom:10px;font-size:13px;font-weight:700;color:#344054}
+.select-machine input{width:18px;height:18px;accent-color:var(--primary)}
+.compare-selected{position:sticky;bottom:15px;z-index:5;background:#111827;color:#fff;border-radius:15px;padding:13px 16px;display:flex;align-items:center;justify-content:space-between;gap:15px;box-shadow:0 12px 30px rgba(0,0,0,.2);margin-top:18px}
+.compare-selected .btn{background:#fff;color:#111827}
+.recommend-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.rec-card{padding:15px;border:1px solid var(--line);border-radius:12px;background:#f8fafc}
+.rec-card b{display:block;margin-bottom:5px}
+.pill{display:inline-block;padding:4px 8px;border-radius:999px;background:#e9f8f1;color:#087443;font-size:11px;font-weight:700}
+
+.product-image{height:210px;border-radius:14px;background:linear-gradient(135deg,#f8fafc,#eef2f7);display:flex;align-items:center;justify-content:center;margin-bottom:16px;overflow:hidden}
+.product-image img{width:100%;height:100%;object-fit:contain;display:block}
+.image-fallback{font-size:76px;filter:grayscale(.15);opacity:.8}
+.brand{font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--primary)}
+.card h3{font-size:20px;margin:7px 0 3px}
+.model{font-size:12px;color:var(--muted)}
+.price{font-size:25px;font-weight:800;margin:15px 0}
+.tags{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:16px}
+.tag{padding:6px 9px;border-radius:999px;background:#f2f4f7;color:#344054;font-size:12px}
+.tag.green{background:#e9f8f1;color:#087443}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.stat{background:#f8fafc;border-radius:12px;padding:11px}
+.stat b{display:block;font-size:19px}
+.stat small{color:var(--muted)}
+.bars{margin-top:16px}
+.bar-row{display:grid;grid-template-columns:78px 1fr 42px;align-items:center;gap:8px;font-size:12px;margin:9px 0}
+.track{height:8px;background:#edf0f5;border-radius:99px;overflow:hidden}
+.fill{height:100%;background:linear-gradient(90deg,var(--primary),var(--primary2));border-radius:99px}
+.actions{display:flex;gap:8px;margin-top:16px}
+.actions button{flex:1}
+.empty{padding:40px;text-align:center;background:#fff;border:1px dashed var(--line);border-radius:16px;color:var(--muted)}
+.panel{background:#fff;border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow);padding:20px;margin-top:30px}
+.rpm-wrap{display:grid;grid-template-columns:1fr 1fr;gap:25px;align-items:center}
+.rpm-box{display:flex;justify-content:center}
+.machine{width:240px;height:240px;border-radius:50%;background:radial-gradient(circle at center,#e9edf5 0 32%,#cbd2df 33% 36%,#71798a 37% 44%,#202735 45% 60%,#0f1520 61%);position:relative;display:grid;place-items:center;box-shadow:inset 0 0 0 10px #343b49,0 15px 30px rgba(0,0,0,.2)}
+.machine:after{content:"";width:125px;height:125px;border-radius:50%;background:radial-gradient(circle,#dbe7ff,#aab9d4 55%,#75839e);border:7px solid #151b26;animation:spin 1.2s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.rpm-big{font-size:44px;font-weight:900;margin:5px 0}
+.rpm-note{color:var(--muted);line-height:1.6}
+.compare{overflow:auto}
+table{width:100%;border-collapse:collapse;min-width:850px}
+th,td{padding:13px 12px;border-bottom:1px solid var(--line);text-align:left;font-size:13px}
+th{background:#f8fafc;position:sticky;top:0}
+.check{color:var(--green);font-weight:800}
+.muted{color:var(--muted)}
+.footer{padding:45px 20px;color:var(--muted);font-size:12px;text-align:center}
+.notice{background:#fff7e6;border:1px solid #f8d38a;color:#7a4b00;padding:13px 15px;border-radius:12px;margin-top:18px;font-size:13px}
+@media(max-width:900px){.controls{grid-template-columns:1fr 1fr}.grid{grid-template-columns:1fr 1fr}.rpm-wrap{grid-template-columns:1fr}}
+@media(max-width:600px){.hero{padding-top:30px}.controls{grid-template-columns:1fr}.grid{grid-template-columns:1fr}.stats{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<header class="hero">
+  <div class="wrap">
+    <h1>WashCompare</h1>
+    <p>Visually compare front-load washing machines by price, capacity, RPM, warranty and useful features — without drowning in spec sheets.</p>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="controls">
+    <input id="search" placeholder="Search brand or model…">
+    <select id="capacity"><option value="">All capacities</option><option value="9">9 kg</option><option value="10">10+ kg</option></select>
+    <select id="rpm"><option value="">All RPM</option><option value="1200">1200 RPM</option><option value="1400">1400 RPM</option></select>
+    <select id="sort"><option value="price">Price: low → high</option><option value="rpm">RPM: high → low</option><option value="capacity">Capacity: high → low</option></select>
+    <button class="btn secondary" onclick="resetFilters()">Reset</button>
+  </section>
+
+  <div class="section-title">
+    <h2>Machines</h2><span id="count"></span>
+  </div>
+  <section id="cards" class="grid"></section>
+
+  <div id="compareBar" class="compare-selected" style="display:none">
+    <span><b id="selectedCount">0</b> machines selected</span>
+    <div style="display:flex;gap:8px"><button class="btn" onclick="compareSelected()">Compare selected</button><button class="btn" onclick="clearCompare()">Clear</button></div>
+  </div>
+
+  <section class="panel">
+    <div class="section-title"><h2>Find by priority</h2><span>Quickly narrow the shortlist</span></div>
+    <div class="recommend-grid">
+      <div class="rec-card"><b>💰 Budget</b><span>Show lower-priced models</span><br><button class="btn secondary" style="margin-top:9px" onclick="priority('budget')">Under ₹40k</button></div>
+      <div class="rec-card"><b>🌀 Drying</b><span>Prioritize 1400 RPM</span><br><button class="btn secondary" style="margin-top:9px" onclick="priority('rpm')">1400 RPM</button></div>
+      <div class="rec-card"><b>🧺 Large loads</b><span>Prioritize 10 kg+</span><br><button class="btn secondary" style="margin-top:9px" onclick="priority('capacity')">10 kg+</button></div>
+      <div class="rec-card"><b>🛡️ Warranty</b><span>Longer stated coverage</span><br><button class="btn secondary" style="margin-top:9px" onclick="priority('warranty')">Long warranty</button></div>
+    </div>
+  </section>
+
+  <section id="selectedCompare" class="panel" style="display:none">
+    <div class="section-title"><h2>Selected comparison</h2><span>Side-by-side</span></div>
+    <div class="compare"><table id="selectedTable"></table></div>
+  </section>
+
+  <section class="panel">
+    <div class="section-title"><h2>All product links</h2><span>Open the exact pages you supplied</span></div>
+    <div id="linksList" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:10px"></div>
+  </section>
+
+  <section class="panel">
+    <div class="section-title"><h2>RPM, visually explained</h2><span>Spin speed ≠ washing quality</span></div>
+    <div class="rpm-wrap">
+      <div>
+        <div class="rpm-big"><span id="rpmValue">1400</span> RPM</div>
+        <p class="rpm-note">RPM mainly affects the final spin cycle. Higher RPM generally extracts more water, so clothes come out drier and may need less time on the drying rack.</p>
+        <div class="bars">
+          <div class="bar-row"><span>1200</span><div class="track"><div class="fill" style="width:86%"></div></div><b>Good</b></div>
+          <div class="bar-row"><span>1400</span><div class="track"><div class="fill" style="width:100%"></div></div><b>Higher</b></div>
+        </div>
+        <div class="notice"><b>Rule of thumb:</b> don't pay a large premium for 1400 RPM alone. Look at motor, heater, vibration control, warranty and service too.</div>
+      </div>
+      <div class="rpm-box"><div class="machine"></div></div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="section-title"><h2>Side-by-side comparison</h2><span>Select up to 4 machines</span></div>
+    <div class="compare"><table id="table"></table></div>
+  </section>
+
+  <div class="footer">
+    Product images are loaded from manufacturer/retailer image hosts where available. Prices are reference values from the comparison research and can change with offers, retailer, location and exact SKU. Always verify the final price and warranty on the seller/manufacturer page.
+  </div>
+</main>
+
+<script>
+const machines = [
+ {brand:"LG",model:"FHP1410Z3M",link:"https://www.google.com/search?ibp=oshop&q=LG%2010%20kg%20Fully%20Automatic%20Front%20Loading%20Washing%20Machine%2C%20FHP1410Z3M%2C%20Middle%20Black",extraLink:"https://share.google/TYCBRJlKGiuGr7myL",image:"https://www.lg.com/content/dam/channel/wcms/in/images/washing-machines/fhp1410z3m/basic-450.jpg",name:"LG 10 kg Front Load",capacity:10,rpm:1400,price:45990,warranty:"2 yr product + 10 yr DD motor",heater:"Yes",smart:"ThinQ Wi‑Fi",features:["AI Direct Drive","6 Motion","Steam","Wi‑Fi"],motor:"Direct Drive",service:"Strong network"},
+ {brand:"LG",model:"FHP1209Z5M",link:"https://www.lg.com/in/laundry/front-loading-washing-machines/fhp1209z5m/",image:"https://www.lg.com/content/dam/channel/wcms/in/images/washing-machines/fhp1209z5m/gallery/FHP1209Z5M-450.jpg",name:"LG 9 kg Front Load",capacity:9,rpm:1200,price:41490,warranty:"2 yr product + 10 yr DD motor",heater:"Yes",smart:"ThinQ Wi‑Fi",features:["AI Direct Drive","6 Motion","Steam","Wi‑Fi"],motor:"Direct Drive",service:"Strong network"},
+ {brand:"Samsung",model:"WW90DG6U24AS",link:"https://www.samsung.com/in/washers-and-dryers/washing-machines/ww6000d-front-loading-smartthings-ai-energy-mode-a-10-percent-extra-energy-efficiency-9kg-navy-ww90dg6u24astl/",image:"https://s3n.cashify.in/cashify/product/img/xhdpi/43db9232-5b42.jpg",name:"Samsung WW6000D",capacity:9,rpm:1400,price:42190,warranty:"2 yr product + 10 yr inverter motor",heater:"Yes",smart:"SmartThings",features:["AI EcoBubble","Hygiene Steam","SuperSpeed","AI Control"],motor:"Digital Inverter",service:"Strong network"},
+ {brand:"Whirlpool",model:"Xpert Care 9kg",link:"https://india.whirlpool.in/xpert-care-9kg-5-star-front-load-washing-machine-with-ozone-air-refresh-technology/p?sc=1",image:"https://m.media-amazon.com/images/I/81KkIVh14xL._SL1500_.jpg",name:"Whirlpool Xpert Care Ozone",capacity:9,rpm:1400,price:39900,warranty:"Verify exact SKU",heater:"Yes",smart:"Varies",features:["Ozone Refresh","SteamWash","FreshCare+","SoftMove"],motor:"Inverter",service:"Verify local support"},
+ {brand:"Whirlpool",model:"Xpert Care 9kg Ozone + Heater",link:"https://india.whirlpool.in/xpert-care-9kg-5-star-front-load-washing-machine-with-ozone-air-refresh-technology-and-in-built-heater-t/p?sc=1",name:"Whirlpool Xpert Care Ozone + Heater",capacity:9,rpm:null,price:null,warranty:"Verify exact SKU",heater:"Yes",smart:"Varies",features:["Ozone Refresh","SteamWash","In-built Heater","FreshCare+"]},
+ {brand:"Whirlpool",model:"Xpert Care 9kg Heater",link:"https://india.whirlpool.in/xpert-care-9kg-5-star-front-load-washing-machine-with-in-built-heater/p?sc=1",name:"Whirlpool Xpert Care In-built Heater",capacity:9,rpm:null,price:null,warranty:"Verify exact SKU",heater:"Yes",smart:"Varies",features:["In-built Heater","SteamWash","Xpert Care","SoftMove"]},
+ {brand:"IFB",model:"Executive OXN 9014K",link:"https://www.ifbappliances.com/executive-oxn-9014k",image:"https://www.digi1.in/wp-content/uploads/2025/09/EXECUTIVE-OXN-9014K.jpg",name:"IFB Executive OXN",capacity:9,rpm:1400,price:39990,warranty:"4 yr + 10 yr motor/spares support",heater:"Yes",smart:"Wi‑Fi / Voice",features:["AI","Power Steam","Aqua Energie","3D Wash"],motor:"Eco Inverter",service:"Appliance-focused"},
+ {brand:"IFB",model:"Executive BXN 9014K",link:"https://www.ifbappliances.com/executive-bxn-9014k",image:"https://www.digi1.in/wp-content/uploads/2025/09/EXECUTIVE-OXN-9014K.jpg",name:"IFB Executive BXN",capacity:9,rpm:1400,price:42990,warranty:"4 yr + 10 yr motor/spares support",heater:"Yes",smart:"Wi‑Fi / Voice",features:["AI","Power Steam","Aqua Energie","3D Wash"],motor:"Eco Inverter",service:"Appliance-focused"},
+ {brand:"Bosch",model:"WGA14200IN",link:"https://www.bosch-home.in/en/product/washer-dryer/washing-machines/front-loading-washing-machines/WGA14200IN",name:"Bosch Series 6",capacity:9,rpm:1200,price:36090,warranty:"Verify current offer",heater:"Yes",smart:"No",features:["EcoSilence Drive","Anti-Stain","SpeedPerfect","AllergyPlus"],motor:"EcoSilence Drive",service:"Established network"},
+ {brand:"Bosch",model:"WGA1420TIN",link:"https://www.bosch-home.in/en/product/washer-dryer/washing-machines/front-loading-washing-machines/WGA1420TIN",name:"Bosch Series 6 TIN",capacity:9,rpm:1200,price:41290,warranty:"Verify current offer",heater:"Yes",smart:"No",features:["SilentPowerDrive","Anti-Stain","SpeedPerfect","AllergyPlus"],motor:"SilentPowerDrive",service:"Established network"},
+ {brand:"Bosch",model:"WGA1420SIN",link:"https://www.bosch-home.in/en/product/washer-dryer/washing-machines/front-loading-washing-machines/WGA1420SIN",name:"Bosch Series 6 SIN",capacity:9,rpm:1200,price:41490,warranty:"Verify current offer",heater:"Yes",smart:"No",features:["SilentPowerDrive","Anti-Stain","SpeedPerfect","AllergyPlus"],motor:"SilentPowerDrive",service:"Established network"},
+ {brand:"MarQ",model:"MQFLDGD10",link:"https://www.flipkart.com/search?q=MarQ%20MQFLDGD10",name:"MarQ Fully Automatic",capacity:10.2,rpm:null,price:null,warranty:"Verify listing",heater:"Verify",smart:"Verify",features:["10.2 kg","Front Load","Value-focused"]}
+];
+
+const money=n=>n==null?"—":"₹"+n.toLocaleString("en-IN");
+const cards=document.getElementById("cards"), count=document.getElementById("count");
+
+function filtered(){
+ const q=document.getElementById("search").value.toLowerCase();
+ const cap=document.getElementById("capacity").value;
+ const r=document.getElementById("rpm").value;
+ const sort=document.getElementById("sort").value;
+ let a=machines.filter(m=>
+   (!q || `${m.brand} ${m.model} ${m.name}`.toLowerCase().includes(q)) &&
+   (!cap || (cap==="9" ? m.capacity===9 : m.capacity>=10)) &&
+   (!r || m.rpm===+r)
+ );
+ a.sort((x,y)=>{
+   if(sort==="rpm") return (y.rpm||0)-(x.rpm||0);
+   if(sort==="capacity") return y.capacity-x.capacity;
+   return (x.price??999999)-(y.price??999999);
+ });
+ return a;
+}
+function render(){
+ const a=filtered(); count.textContent=`${a.length} of ${machines.length} machines`;
+ cards.innerHTML=a.length?a.map((m,i)=>`
+ <article class="card">
+   <label class="select-machine"><input type="checkbox" class="compare-check" value="${m.model}" ${selectedModels.includes(m.model)?"checked":""} onchange="toggleCompare('${m.model}', this.checked)"> Add to comparison</label>
+   <div class="product-image">${m.image ? `<img src="${m.image}" alt="${m.brand} ${m.model} washing machine" loading="lazy" onerror="this.parentElement.innerHTML='<div class=&quot;image-fallback&quot;>🧺</div>'">` : `<div class="image-fallback">🧺</div>`}</div>
+   <div class="brand">${m.brand}</div>
+   <h3>${m.name}</h3><div class="model">${m.model}</div>
+   <div class="price">${money(m.price)}</div>
+   <div class="tags">${m.features.map(x=>`<span class="tag">${x}</span>`).join("")}</div>
+   <div class="stats">
+     <div class="stat"><b>${m.capacity} kg</b><small>Capacity</small></div>
+     <div class="stat"><b>${m.rpm?m.rpm:"—"}</b><small>Max RPM</small></div>
+     <div class="stat"><b>${m.heater}</b><small>Heater</small></div>
+     <div class="stat"><b>${m.smart}</b><small>Smart features</small></div>
+   </div>
+   ${m.rpm?`<div class="bars"><div class="bar-row"><span>RPM</span><div class="track"><div class="fill" style="width:${Math.min(100,m.rpm/14)}%"></div></div><b>${m.rpm}</b></div></div>`:""}
+   <div class="actions">
+     <button class="btn" onclick="quickSelect('${m.model}')">Compare</button>
+     <button class="btn secondary" onclick="showRPM(${m.rpm||0})">RPM</button>
+   </div>
+   ${m.link ? `<div class="actions"><a class="btn secondary" href="${m.link}" target="_blank" rel="noopener noreferrer" style="text-decoration:none;text-align:center">View product ↗</a>${m.extraLink ? `<a class="btn secondary" href="${m.extraLink}" target="_blank" rel="noopener noreferrer" style="text-decoration:none;text-align:center">Shared link ↗</a>` : ""}</div>` : ""}
+ </article>`).join(""):`<div class="empty">No machines match your filters.</div>`;
+ renderTable(a);
+}
+function renderLinks(){
+ const list=document.getElementById("linksList");
+ const seen=new Set();
+ const rows=[];
+ machines.forEach(m=>{
+   if(m.link && !seen.has(m.link)){seen.add(m.link);rows.push({label:`${m.brand} ${m.model}`,url:m.link})}
+   if(m.extraLink && !seen.has(m.extraLink)){seen.add(m.extraLink);rows.push({label:`LG FHP1410Z3M — shared link`,url:m.extraLink})}
+ });
+ list.innerHTML=rows.map(x=>`<a href="${x.url}" target="_blank" rel="noopener noreferrer" style="padding:13px 15px;border:1px solid var(--line);border-radius:12px;text-decoration:none;color:var(--text);background:#f8fafc"><b>${x.label}</b><br><span class="muted" style="font-size:11px;word-break:break-all">${x.url}</span></a>`).join("");
+}
+let selectedModels = [];
+
+function toggleCompare(model, checked){
+  if(checked){
+    if(selectedModels.length >= 4){
+      alert("You can compare up to 4 machines at once.");
+      document.querySelector(`.compare-check[value="${CSS.escape(model)}"]`).checked=false;
+      return;
+    }
+    selectedModels.push(model);
+  }else{
+    selectedModels=selectedModels.filter(x=>x!==model);
+  }
+  updateCompareBar();
+}
+function updateCompareBar(){
+  const bar=document.getElementById("compareBar");
+  document.getElementById("selectedCount").textContent=selectedModels.length;
+  bar.style.display=selectedModels.length?"flex":"none";
+}
+function clearCompare(){
+  selectedModels=[];
+  document.querySelectorAll(".compare-check").forEach(x=>x.checked=false);
+  document.getElementById("selectedCompare").style.display="none";
+  updateCompareBar();
+}
+function compareSelected(){
+  if(selectedModels.length<2){ alert("Select at least 2 machines to compare."); return; }
+  const ms=selectedModels.map(id=>machines.find(m=>m.model===id)).filter(Boolean);
+  const rows=[
+    ["Price",m=>money(m.price)],
+    ["Capacity",m=>m.capacity+" kg"],
+    ["Max RPM",m=>m.rpm||"—"],
+    ["Heater",m=>m.heater||"—"],
+    ["Motor",m=>m.motor||"—"],
+    ["Smart features",m=>m.smart||"—"],
+    ["Warranty",m=>m.warranty||"—"],
+    ["Service",m=>m.service||"—"],
+    ["Key features",m=>(m.features||[]).join(" • ")]
+  ];
+  document.getElementById("selectedTable").innerHTML=`
+    <thead><tr><th>Specification</th>${ms.map(m=>`<th>${m.brand}<br><span class="muted">${m.model}</span></th>`).join("")}</tr></thead>
+    <tbody>${rows.map(([k,fn])=>`<tr><th>${k}</th>${ms.map(m=>`<td>${fn(m)}</td>`).join("")}</tr>`).join("")}</tbody>`;
+  const panel=document.getElementById("selectedCompare");
+  panel.style.display="block";
+  panel.scrollIntoView({behavior:"smooth",block:"start"});
+}
+function priority(type){
+  const search=document.getElementById("search");
+  const cap=document.getElementById("capacity");
+  const rpm=document.getElementById("rpm");
+  search.value="";
+  cap.value="";
+  rpm.value="";
+  if(type==="budget"){
+    machines.sort((a,b)=>(a.price??999999)-(b.price??999999));
+  }else if(type==="rpm"){
+    rpm.value="1400";
+  }else if(type==="capacity"){
+    cap.value="10";
+  }else if(type==="warranty"){
+    machines.sort((a,b)=>((b.warranty||"").length)-((a.warranty||"").length));
+  }
+  render();
+  window.scrollTo({top:document.querySelector("#cards").getBoundingClientRect().top+scrollY-90,behavior:"smooth"});
+}
+function renderTable(a){
+ const cols=a.slice(0,4);
+ document.getElementById("table").innerHTML=`
+ <thead><tr><th>Specification</th>${cols.map(m=>`<th>${m.brand}<br><span class="muted">${m.model}</span></th>`).join("")}</tr></thead>
+ <tbody>
+ ${row("Price",cols.map(m=>money(m.price)))}${row("Capacity",cols.map(m=>m.capacity+" kg"))}
+ ${row("Max RPM",cols.map(m=>m.rpm||"—"))}${row("Heater",cols.map(m=>m.heater))}
+ ${row("Smart",cols.map(m=>m.smart))}${row("Warranty",cols.map(m=>m.warranty))}
+ ${row("Key features",cols.map(m=>m.features.join(" • ")))}
+ </tbody>`;
+}
+function row(k,v){return `<tr><th>${k}</th>${v.map(x=>`<td>${x}</td>`).join("")}</tr>`}
+function quickSelect(model){
+  const box=document.querySelector(`.compare-check[value="${CSS.escape(model)}"]`);
+  if(box){ box.checked=true; toggleCompare(model,true); }
+}
+function selectCompare(model){
+ const m=machines.find(x=>x.model===model);
+ alert(`${m.brand} ${m.model}\\n\\nCapacity: ${m.capacity} kg\\nRPM: ${m.rpm||"Not specified"}\\nPrice: ${money(m.price)}\\nWarranty: ${m.warranty}`);
+}
+function showRPM(r){document.getElementById("rpmValue").textContent=r||"—";window.scrollTo({top:document.querySelector(".rpm-wrap").getBoundingClientRect().top+scrollY-90,behavior:"smooth"})}
+function resetFilters(){document.getElementById("search").value="";document.getElementById("capacity").value="";document.getElementById("rpm").value="";document.getElementById("sort").value="price";render()}
+["search","capacity","rpm","sort"].forEach(id=>document.getElementById(id).addEventListener("input",render));
+render();
+renderLinks();
+</script>
+</body>
+</html>
